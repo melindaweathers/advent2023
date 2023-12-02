@@ -76,7 +76,27 @@ func possibleGame(line string) int {
 	return game.num
 }
 
+// Min power for the second star
+func minPower(line string) int {
+	game := parseLine(line)
+	var minRed, minGreen, minBlue int
+	for _, draw := range game.draws {
+		if minRed < draw.red {
+			minRed = draw.red
+		}
+		if minGreen < draw.green {
+			minGreen = draw.green
+		}
+		if minBlue < draw.blue {
+			minBlue = draw.blue
+		}
+	}
+	return minRed * minGreen * minBlue
+}
+
 func main() {
 	fmt.Println(process("./input-test.txt", possibleGame))
 	fmt.Println(process("./input.txt", possibleGame))
+	fmt.Println(process("./input-test.txt", minPower))
+	fmt.Println(process("./input.txt", minPower))
 }
