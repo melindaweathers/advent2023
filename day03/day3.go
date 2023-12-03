@@ -12,6 +12,7 @@ type Schematic struct {
 	max_i  int
 	max_j  int
 	engine map[string]rune
+	gears  map[string][]int
 }
 
 func (s Schematic) isNum(i int, j int) bool {
@@ -34,6 +35,7 @@ func (s Schematic) val(i int, j int) rune {
 func process(filename string, processor func(Schematic) int) int {
 	schematic := Schematic{}
 	schematic.engine = map[string]rune{}
+	schematic.gears = map[string][]int{}
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -63,18 +65,23 @@ func key(i int, j int) string {
 	return fmt.Sprintf("%d,%d", i, j)
 }
 
-func isSymbolAdjacent(s Schematic, i int, jStart int, jEnd int) bool {
+func isSymbolAdjacent(s Schematic, i int, jStart int, jEnd int, val int) bool {
+	foundSymbol := false
 	for iTest := i - 1; iTest <= i+1; iTest++ {
 		for jTest := jStart - 1; jTest <= jEnd+1; jTest++ {
 			if s.isSymbol(iTest, jTest) {
-				return true
+				foundSymbol = true
+			}
+			if s.val(iTest, jTest) == '*' {
+				loc := key(iTest, jTest)
+				s.gears[loc] = append(s.gears[loc], val)
 			}
 		}
 	}
-	return false
+	return foundSymbol
 }
 
-func sumPartNumbers(s Schematic) int {
+func processSchematic(s Schematic) int {
 	sum := 0
 	insideNumber := false
 	jStart := -1
@@ -91,8 +98,8 @@ func sumPartNumbers(s Schematic) int {
 				if !s.isNum(i, j+1) {
 					jEnd = j
 					insideNumber = false
-					if isSymbolAdjacent(s, i, jStart, jEnd) {
-						partNumberNum, _ := strconv.Atoi(partNumber)
+					partNumberNum, _ := strconv.Atoi(partNumber)
+					if isSymbolAdjacent(s, i, jStart, jEnd, partNumberNum) {
 						sum += partNumberNum
 					}
 					partNumber = ""
@@ -103,7 +110,24 @@ func sumPartNumbers(s Schematic) int {
 	return sum
 }
 
+func sumPartNumbers(s Schematic) int {
+	return processSchematic(s)
+}
+
+func sumGearRatios(s Schematic) int {
+	_ = processSchematic(s)
+	sum := 0
+	for _, v := range s.gears {
+		if len(v) == 2 {
+			sum += v[0] * v[1]
+		}
+	}
+	return sum
+}
+
 func main() {
 	fmt.Println(process("./input-test.txt", sumPartNumbers))
 	fmt.Println(process("./input.txt", sumPartNumbers))
+	fmt.Println(process("./input-test.txt", sumGearRatios))
+	fmt.Println(process("./input.txt", sumGearRatios))
 }
