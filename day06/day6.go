@@ -46,4 +46,6 @@ func process(filename string, processor func(int, int) int) int {
 func main() {
 	fmt.Println(process("./input-test.txt", numWaysToBeatRecord))
 	fmt.Println(process("./input.txt", numWaysToBeatRecord))
+	fmt.Println(numWaysToBeatRecord(71530, 940200))
+	fmt.Println(numWaysToBeatRecord(44826981, 202107611381458))
 }
