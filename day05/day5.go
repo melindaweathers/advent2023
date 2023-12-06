@@ -99,7 +99,23 @@ func closestLocation(fileName string) int {
 	return minLocation
 }
 
+func closestLocationByRange(fileName string) int {
+	a := createAlmanac(fileName)
+	minLocation := 1000000000
+	for i := 0; i < len(a.seeds); i += 2 {
+		for j := a.seeds[i]; j < a.seeds[i]+a.seeds[i+1]; j++ {
+			seedLoc := a.locationForSeed(j)
+			if seedLoc < minLocation {
+				minLocation = seedLoc
+			}
+		}
+	}
+	return minLocation
+}
+
 func main() {
 	fmt.Println(closestLocation("./input-test.txt"))
 	fmt.Println(closestLocation("./input.txt"))
+	fmt.Println(closestLocationByRange("./input-test.txt"))
+	fmt.Println(closestLocationByRange("./input.txt"))
 }
