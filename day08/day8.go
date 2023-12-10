@@ -104,17 +104,32 @@ func countStepsPart1(filename string) int {
 	return steps
 }
 
+func allDone(nodes []string) bool {
+	for _, node := range nodes {
+		if !strings.HasSuffix(node, "Z") {
+			return false
+		}
+	}
+	return true
+}
+
 func countGhostSteps(filename string) int {
 	steps := 0
 	ptr := 0
 	network := readNetwork(filename)
-	stepSize := 1
-	for _, node := range network.startingNodes {
-		stepsToZ, _ := countSteps(network, node, "Z", ptr)
-		stepSize = LCM(stepSize, stepsToZ, []int{})
+	currentNodes := network.startingNodes
+	for !allDone(currentNodes) {
+		stepSize := 1
+		nextNodes := []string{}
+		for _, node := range currentNodes {
+			stepsToZ, nodeWithZ := countSteps(network, node, "Z", ptr)
+			stepSize = LCM(stepSize, stepsToZ, []int{})
+			nextNodes = append(nextNodes, nodeWithZ)
+		}
+		steps += stepSize
+		ptr = (ptr + stepSize) % len(network.instructions)
+		currentNodes = nextNodes
 	}
-	steps += stepSize
-	ptr = (ptr + stepSize) % len(network.instructions)
 	return steps
 }
 
