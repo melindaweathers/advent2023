@@ -26,6 +26,7 @@ func sortableHand(s string) string {
 		'Q': 'C',
 		'K': 'D',
 		'A': 'E',
+		'O': '1',
 	}
 
 	rtn := ""
@@ -45,14 +46,24 @@ func sortableHand(s string) string {
 func handType(s string) rune {
 	cardCounts := map[rune]int{}
 	var t rune
+	numJokers := 0
 	for _, card := range s {
 		cardCounts[card]++
 	}
 	countsOnly := []int{}
-	for _, value := range cardCounts {
-		countsOnly = append(countsOnly, value)
+	for key, value := range cardCounts {
+		if key == 'O' {
+			numJokers = value
+		} else {
+			countsOnly = append(countsOnly, value)
+		}
 	}
 	sort.Ints(countsOnly)
+	if len(countsOnly) == 0 {
+		countsOnly = []int{5}
+	} else {
+		countsOnly[len(countsOnly)-1] += numJokers
+	}
 	if len(countsOnly) == 1 {
 		// 5 Five of a kind
 		t = 'G'
@@ -86,7 +97,7 @@ func toInt(s string) int {
 	return num
 }
 
-func readHands(filename string) []Hand {
+func readHands(filename string, withJoker bool) []Hand {
 	b, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -94,12 +105,24 @@ func readHands(filename string) []Hand {
 	hands := []Hand{}
 	for _, line := range strings.Split(string(b), "\n") {
 		parts := strings.Split(line, " ")
-		handType := handType(parts[0])
+		cards := ""
+		if withJoker {
+			for _, r := range parts[0] {
+				if r == 'J' {
+					cards = cards + "O"
+				} else {
+					cards = cards + string(r)
+				}
+			}
+		} else {
+			cards = parts[0]
+		}
+		handType := handType(cards)
 		hands = append(hands, Hand{
-			cards:       parts[0],
+			cards:       cards,
 			bid:         toInt(parts[1]),
 			mainType:    handType,
-			sortableVal: string(handType) + sortableHand(parts[0]),
+			sortableVal: string(handType) + sortableHand(cards),
 		})
 	}
 	sort.Slice(hands, func(i, j int) bool {
@@ -108,9 +131,8 @@ func readHands(filename string) []Hand {
 	return hands
 }
 
-func totalWinnings(filename string) int {
-	hands := readHands(filename)
-	// fmt.Println(hands)
+func totalWinnings(filename string, withJoker bool) int {
+	hands := readHands(filename, withJoker)
 	total := 0
 	for i, hand := range hands {
 		total += (i + 1) * hand.bid
@@ -118,8 +140,19 @@ func totalWinnings(filename string) int {
 	return total
 }
 
+func totalWinningsNoJoker(filename string) int {
+	return totalWinnings(filename, false)
+}
+
+func totalWinningsWithJoker(filename string) int {
+	return totalWinnings(filename, true)
+}
+
 func main() {
-	fmt.Println(totalWinnings("./input-test.txt"))
-	fmt.Println(totalWinnings("./input-test2.txt"))
-	fmt.Println(totalWinnings("./input.txt"))
+	fmt.Println(totalWinningsNoJoker("./input-test.txt"))
+	fmt.Println(totalWinningsNoJoker("./input-test2.txt"))
+	fmt.Println(totalWinningsNoJoker("./input.txt"))
+	fmt.Println(totalWinningsWithJoker("./input-test.txt"))
+	fmt.Println(totalWinningsWithJoker("./input-test2.txt"))
+	fmt.Println(totalWinningsWithJoker("./input.txt"))
 }
