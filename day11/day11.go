@@ -32,23 +32,17 @@ func (r Row) noGalaxies() bool {
 	return true
 }
 
-func (i Image) distanceTo(galaxy Galaxy, otherGalaxy Galaxy, expansion int) int {
-	var fromRow, toRow, fromCol, toCol int
-	if galaxy.row < otherGalaxy.row {
-		fromRow = galaxy.row
-		toRow = otherGalaxy.row
+func fromTo(i1 int, i2 int) (int, int) {
+	if i1 < i2 {
+		return i1, i2
 	} else {
-		fromRow = otherGalaxy.row
-		toRow = galaxy.row
+		return i2, i1
 	}
+}
 
-	if galaxy.col < otherGalaxy.col {
-		fromCol = galaxy.col
-		toCol = otherGalaxy.col
-	} else {
-		fromCol = otherGalaxy.col
-		toCol = galaxy.col
-	}
+func (i Image) distanceTo(galaxy Galaxy, otherGalaxy Galaxy, expansion int) int {
+	fromRow, toRow := fromTo(galaxy.row, otherGalaxy.row)
+	fromCol, toCol := fromTo(galaxy.col, otherGalaxy.col)
 
 	rowExpansions := 0
 	for r := fromRow; r < toRow; r++ {
@@ -64,7 +58,7 @@ func (i Image) distanceTo(galaxy Galaxy, otherGalaxy Galaxy, expansion int) int 
 		}
 	}
 
-	return (toRow - fromRow - rowExpansions) + rowExpansions*expansion + (toCol - fromCol - colExpansions) + colExpansions*expansion
+	return (toRow - fromRow) + rowExpansions*(expansion-1) + (toCol - fromCol) + colExpansions*(expansion-1)
 }
 
 func readImage(filename string) Image {
