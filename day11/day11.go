@@ -32,16 +32,39 @@ func (r Row) noGalaxies() bool {
 	return true
 }
 
-func absInt(i int) int {
-	if i < 0 {
-		return i * -1
+func (i Image) distanceTo(galaxy Galaxy, otherGalaxy Galaxy, expansion int) int {
+	var fromRow, toRow, fromCol, toCol int
+	if galaxy.row < otherGalaxy.row {
+		fromRow = galaxy.row
+		toRow = otherGalaxy.row
 	} else {
-		return i
+		fromRow = otherGalaxy.row
+		toRow = galaxy.row
 	}
-}
 
-func (galaxy Galaxy) distanceTo(otherGalaxy Galaxy) int {
-	return absInt(otherGalaxy.row-galaxy.row) + absInt(otherGalaxy.col-galaxy.col)
+	if galaxy.col < otherGalaxy.col {
+		fromCol = galaxy.col
+		toCol = otherGalaxy.col
+	} else {
+		fromCol = otherGalaxy.col
+		toCol = galaxy.col
+	}
+
+	rowExpansions := 0
+	for r := fromRow; r < toRow; r++ {
+		if i.rows[r].cols[galaxy.col] == 'v' {
+			rowExpansions++
+		}
+	}
+
+	colExpansions := 0
+	for c := fromCol; c < toCol; c++ {
+		if i.rows[galaxy.row].cols[c] == 'v' {
+			colExpansions++
+		}
+	}
+
+	return (toRow - fromRow - rowExpansions) + rowExpansions*expansion + (toCol - fromCol - colExpansions) + colExpansions*expansion
 }
 
 func readImage(filename string) Image {
@@ -51,60 +74,50 @@ func readImage(filename string) Image {
 	}
 	numRows := 0
 	var row Row
-	image := Image{rows: []Row{}}
+	image := Image{rows: []Row{}, galaxies: []Galaxy{}}
 	for _, line := range strings.Split(string(b), "\n") {
 		row = Row{cols: []rune(line)}
-		numRows++
-		image.rows = append(image.rows, row)
-		// Append an additional blank row if this one is blank
 		if row.noGalaxies() {
-			row = Row{cols: []rune(line)}
-			numRows++
-			image.rows = append(image.rows, row)
+			for i := 0; i < len(row.cols); i++ {
+				row.cols[i] = 'v'
+			}
 		}
+		image.rows = append(image.rows, row)
+		numRows++
 	}
 	image.numRows = numRows
 	image.numCols = len(row.cols)
-	image = expandColumns(image)
+	galaxies := expandColumns(image)
+	image.galaxies = galaxies
 	return image
 }
 
-func expandColumns(image Image) Image {
-	newImage := Image{numRows: image.numRows, rows: []Row{}, galaxies: []Galaxy{}}
-	extraCols := 0
-
-	for r := 0; r < image.numRows; r++ {
-		newImage.rows = append(newImage.rows, Row{cols: []rune{}})
-	}
-
+func expandColumns(image Image) []Galaxy {
+	galaxies := []Galaxy{}
 	for c := 0; c < image.numCols; c++ {
 		hasGalaxies := false
 		for r := 0; r < image.numRows; r++ {
-			newRune := image.rows[r].cols[c]
-			newImage.rows[r].cols = append(newImage.rows[r].cols, newRune)
-			if newRune != '.' {
-				newImage.galaxies = append(newImage.galaxies, Galaxy{row: r, col: c + extraCols})
+			if image.rows[r].cols[c] == '#' {
 				hasGalaxies = true
+				galaxies = append(galaxies, Galaxy{row: r, col: c})
 			}
 		}
 		if !hasGalaxies {
-			extraCols += 1
-			for r2 := 0; r2 < image.numRows; r2++ {
-				newImage.rows[r2].cols = append(newImage.rows[r2].cols, '.')
+			for r := 0; r < image.numRows; r++ {
+				image.rows[r].cols[c] = 'v'
 			}
 		}
 	}
-	newImage.numCols = image.numCols + extraCols
-	return newImage
+	return galaxies
 }
 
-func sumDistances(filename string) int {
+func sumDistances(filename string, expansion int) int {
 	image := readImage(filename)
 	sum := 0
 
 	for i := 0; i < len(image.galaxies)-1; i++ {
 		for j := i + 1; j < len(image.galaxies); j++ {
-			sum += image.galaxies[i].distanceTo(image.galaxies[j])
+			sum += image.distanceTo(image.galaxies[i], image.galaxies[j], expansion)
 		}
 	}
 
@@ -112,6 +125,9 @@ func sumDistances(filename string) int {
 }
 
 func main() {
-	fmt.Println(sumDistances("./input-test.txt"))
-	fmt.Println(sumDistances("./input.txt"))
+	fmt.Println(sumDistances("./input-test.txt", 2))
+	fmt.Println(sumDistances("./input.txt", 2))
+	fmt.Println(sumDistances("./input-test.txt", 10))
+	fmt.Println(sumDistances("./input-test.txt", 100))
+	fmt.Println(sumDistances("./input.txt", 1000000))
 }
