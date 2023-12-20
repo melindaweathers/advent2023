@@ -37,11 +37,9 @@ func readGrid(filename string) map[string]Tile {
 	}
 	grid := map[string]Tile{}
 	lines := strings.Split(string(b), "\n")
-	energized := false
 	for y, line := range lines {
 		for x, char := range line {
-			energized = x == 0 && y == 0
-			grid[key(x, y)] = Tile{char: char, energized: energized}
+			grid[key(x, y)] = Tile{char: char, energized: false}
 		}
 	}
 	return grid
@@ -123,10 +121,10 @@ func printGrid(grid map[string]Tile) {
 	}
 }
 
-func totalEnergized(filename string) int {
+func energizedHelper(filename string, startx int, starty int, startdir rune) int {
 	grid := readGrid(filename)
 	beams := []Beam{}
-	beams = append(beams, Beam{x: -1, y: 0, direction: 'r'})
+	beams = append(beams, Beam{x: startx, y: starty, direction: startdir})
 	history := map[string]bool{}
 
 	for i := 0; len(beams) > 0; i++ {
@@ -169,12 +167,43 @@ func totalEnergized(filename string) int {
 		// printGrid(grid)
 		beams = nextBeams
 	}
-
 	return countEnergized(grid)
+}
+
+func totalEnergized(filename string) int {
+	return energizedHelper(filename, -1, 0, 'r')
+}
+
+func maxEnergized(filename string, size int) int {
+	max := 0
+	val := 0
+	for y := 0; y < size; y++ {
+		val = energizedHelper(filename, -1, y, 'r')
+		if val > max {
+			max = val
+		}
+		val = energizedHelper(filename, size, y, 'l')
+		if val > max {
+			max = val
+		}
+	}
+	for x := 0; x < size; x++ {
+		val = energizedHelper(filename, x, -1, 'd')
+		if val > max {
+			max = val
+		}
+		val = energizedHelper(filename, x, size, 'u')
+		if val > max {
+			max = val
+		}
+	}
+	return max
 }
 
 func main() {
 	fmt.Println(totalEnergized("input-test.txt"))
 	fmt.Println(totalEnergized("input-test2.txt"))
 	fmt.Println(totalEnergized("input.txt"))
+	fmt.Println(maxEnergized("input-test.txt", 10))
+	fmt.Println(maxEnergized("input.txt", 110))
 }
